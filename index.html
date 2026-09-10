@@ -79,6 +79,20 @@ button{cursor:pointer}.hidden{display:none!important}
 .lead[data-status] .badge{background:var(--status-color)!important;color:#fff!important}.lead[data-status="new"] .badge{color:#1b1000!important}
 .chip[data-filter="new"]{border:1px solid #ffb02066;color:#ffbf3d}.chip[data-filter="measurement"]{border:1px solid #3185ff66;color:#69a6ff}.chip[data-filter="installation"]{border:1px solid #ff4d8d66;color:#ff78aa}.chip[data-filter="paid"]{border:1px solid #13d6a066;color:#48e4b8}
 .chip[data-filter="new"].active{background:#ffb020;color:#1b1000}.chip[data-filter="measurement"].active{background:#3185ff;color:#fff}.chip[data-filter="installation"].active{background:#ff4d8d;color:#fff}.chip[data-filter="paid"].active{background:#13b982;color:#fff}
+
+/* v9: enhanced Today block */
+.today{display:grid;gap:12px}
+.task{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035)}
+.task.measurement{background:linear-gradient(135deg,rgba(59,130,246,.17),rgba(59,130,246,.07));border-color:rgba(96,165,250,.28)}
+.task.installation{background:linear-gradient(135deg,rgba(236,72,153,.16),rgba(236,72,153,.06));border-color:rgba(244,114,182,.25)}
+.task-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:rgba(255,255,255,.08)}
+.task-main{min-width:0}.task-main b{display:block;font-size:15px}.task-main span{display:block;margin-top:4px;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-time{font-weight:800;font-size:14px}
+.task-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
+.task-actions button{min-height:42px;border:0;border-radius:13px;font-weight:800;font-size:13px}
+.task-call{background:rgba(34,197,94,.16);color:#86efac;border:1px solid rgba(34,197,94,.26)!important}
+.task-open{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.10)!important}
+.today-empty{padding:18px;border-radius:18px;background:rgba(255,255,255,.035);border:1px dashed rgba(255,255,255,.1);color:var(--muted)}
 </style>
 </head>
 <body>
@@ -189,7 +203,7 @@ function greeting(){const h=new Date().getHours();return h<6?"Доброй но�
 async function loadData(){
   if(!ownerSession){showLogin();return}
   try{
-    const r=await fetch(API_URL,{headers:{"X-SolarFlow-Session":ownerSession}});
+    const r=await fetch(API_URL+"&t="+Date.now(),{cache:"no-store",headers:{"X-SolarFlow-Session":ownerSession,"Cache-Control":"no-cache"}});
     const j=await r.json();
     if(r.status===401){logoutOwner();document.getElementById("loginError").textContent="Сессия истекла. Введите PIN ещё раз.";return}
     if(!r.ok||!j.ok)throw new Error(j.error||"Ошибка API");
@@ -200,7 +214,22 @@ async function loadData(){
   }catch(e){alert("Не удалось загрузить CRM: "+e.message)}
 }
 function render(){const first=(data.admin?.name||"Администратор").trim().split(" ")[0];document.getElementById("hello").textContent=`${greeting()}, ${first} 👋`;document.getElementById("avatar").textContent=first[0]?.toUpperCase()||"A";document.getElementById("dayLabel").textContent=new Intl.DateTimeFormat("ru-UA",{weekday:"long",day:"numeric",month:"long"}).format(new Date());document.getElementById("sNew").textContent=data.stats?.new||0;document.getElementById("sMeasure").textContent=data.stats?.measurement||0;document.getElementById("sInstall").textContent=data.stats?.installation||0;document.getElementById("sPaid").textContent=data.stats?.paid||0;document.getElementById("recentCards").innerHTML=(data.leads||[]).slice(0,4).map(cardHtml).join("")||'<div class="empty"><b>Пока тихо</b>Новых заявок ещё нет.</div>';renderToday();renderAllLeads();renderCalendar();renderChats();renderClients();updateSettingsUI();updateChatBadge()}
-function renderToday(){const today=(data.leads||[]).filter(l=>sameDay(l.visit_date)||sameDay(l.installation_date));document.getElementById("todayTasks").innerHTML=today.map(l=>{const isM=sameDay(l.visit_date),time=fmtDate(isM?l.visit_date:l.installation_date).split(", ").pop();return `<div class="task" onclick="openLead('${l.id}')"><div class="task-icon">${isM?"📐":"🔧"}</div><div class="task-main"><b>${isM?"Замер":"Монтаж"} · ${esc(l.client?.full_name||"Клиент")}</b><span>${esc(l.client?.city||"—")} · ${esc(l.address||"")}</span></div><div class="task-time">${esc(time)}</div></div>`}).join("")||'<div class="empty"><b>Сегодня свободно</b>Назначенных замеров и монтажей нет.</div>'}
+function renderToday(){
+ const today=(data.leads||[]).filter(l=>sameDay(l.visit_date)||sameDay(l.installation_date)).sort((a,b)=>{const da=new Date(sameDay(a.visit_date)?a.visit_date:a.installation_date);const db=new Date(sameDay(b.visit_date)?b.visit_date:b.installation_date);return da-db});
+ document.getElementById("todayTasks").innerHTML=today.map(l=>{
+   const isM=sameDay(l.visit_date),when=isM?l.visit_date:l.installation_date,time=fmtDate(when).split(", ").pop();
+   const phone=String(l.client?.phone||"").replace(/[^+\d]/g,"");
+   return `<div class="task ${isM?"measurement":"installation"}">
+     <div class="task-icon">${isM?"📐":"🔧"}</div>
+     <div class="task-main"><b>${isM?"Замер":"Монтаж"} · ${esc(l.client?.full_name||"Клиент")}</b><span>${esc(l.client?.city||"—")}${l.address?" · "+esc(l.address):""}</span></div>
+     <div class="task-time">${esc(time)}</div>
+     <div class="task-actions">
+       <button class="task-call" onclick="event.stopPropagation();${phone?`location.href='tel:${phone}'`:`alert('У клиента не указан телефон')`}">📞 Позвонить</button>
+       <button class="task-open" onclick="openLead('${l.id}')">Открыть заявку</button>
+     </div>
+   </div>`
+ }).join("")||'<div class="today-empty"><b style="display:block;color:#fff;margin-bottom:5px">Сегодня свободно</b>Назначенных замеров и монтажей нет.</div>'
+}
 function openDashboardFilter(v){
  currentFilter=v;
  setView("leads");
@@ -245,7 +274,7 @@ function toast(text){const el=document.getElementById("toast");el.textContent=te
 function timeShort(v){if(!v)return"";const d=new Date(v),today=new Date();return sameDay(v,today)?new Intl.DateTimeFormat("ru-UA",{hour:"2-digit",minute:"2-digit"}).format(d):new Intl.DateTimeFormat("ru-UA",{day:"2-digit",month:"2-digit"}).format(d)}
 function updateChatBadge(){const n=(data.chats||[]).reduce((a,c)=>a+Number(c.unread||0),0),b=document.getElementById("chatBadge");if(!b)return;b.textContent=n>99?"99+":n;b.style.display=n?"grid":"none"}
 function renderChats(){const q=(document.getElementById("chatSearch")?.value||"").toLowerCase().trim();const arr=(data.chats||[]).filter(c=>[c.full_name,c.phone,c.city,c.last_text].join(" ").toLowerCase().includes(q));document.getElementById("chatList").innerHTML=arr.map(c=>`<div class="chat-row" onclick="openChat('${c.client_id}')"><div class="chat-avatar">${esc((c.full_name||"?")[0]?.toUpperCase()||"?")}</div><div class="chat-main"><div class="chat-top"><b>${esc(c.full_name||"Клиент")}</b><span class="chat-time">${esc(timeShort(c.last_at))}</span></div><div class="chat-preview"><span>${c.last_direction==="out"?"Вы: ":""}${esc(c.last_text||"")}</span>${c.unread?`<span class="unread">${c.unread}</span>`:""}</div></div></div>`).join("")||'<div class="empty"><b>Сообщений пока нет</b>Когда клиент напишет боту, чат появится здесь.</div>';updateChatBadge()}
-async function refreshChats(showErrors=false){if(!ownerSession)return;try{const r=await fetch(API_URL+"&section=chats",{headers:{"X-SolarFlow-Session":ownerSession}}),j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||"Ошибка");const old=lastUnreadTotal;data.chats=j.chats||[];const now=data.chats.reduce((a,c)=>a+Number(c.unread||0),0);if(now>old&&old>=0)notifyNewMessage();lastUnreadTotal=now;renderChats();if(activeChat)await loadChatMessages(activeChat.client_id,false)}catch(e){if(showErrors)toast("Не удалось обновить чаты")}}
+async function refreshChats(showErrors=false){if(!ownerSession)return;try{const r=await fetch(API_URL+"&section=chats&t="+Date.now(),{cache:"no-store",headers:{"X-SolarFlow-Session":ownerSession,"Cache-Control":"no-cache"}}),j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||"Ошибка");const old=lastUnreadTotal;data.chats=j.chats||[];const now=data.chats.reduce((a,c)=>a+Number(c.unread||0),0);if(now>old&&old>=0)notifyNewMessage();lastUnreadTotal=now;renderChats();if(activeChat)await loadChatMessages(activeChat.client_id,false)}catch(e){if(showErrors)toast("Не удалось обновить чаты")}}
 function notifyApp(title,body){if(!appSettings.notifications)return;if("Notification" in window&&Notification.permission==="granted"){try{new Notification(title,{body,icon:"./icons/icon-192.png"})}catch(e){}}}
 function notifyNewMessage(){notifyApp("SolarFlow · новое сообщение","Клиент написал в Telegram-бот") }
 async function openChat(clientId){const summary=(data.chats||[]).find(c=>c.client_id===clientId)||{client_id:clientId,full_name:"Клиент"};activeChat=summary;document.getElementById("chatListPanel").classList.add("hidden");document.getElementById("conversationPanel").classList.remove("hidden");document.getElementById("chatPerson").textContent=summary.full_name||"Клиент";document.getElementById("chatPersonMeta").textContent=[summary.city,summary.phone].filter(Boolean).join(" · ");await loadChatMessages(clientId,true)}
