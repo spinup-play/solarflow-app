@@ -1,4 +1,4 @@
-const CACHE_NAME='solarflow-v13.3-premium';
+const CACHE_NAME='solarflow-v14-smartcrm-20260910';
 const CORE=['./','./index.html','./manifest.webmanifest'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE).catch(()=>{})));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))));self.clients.claim()});
