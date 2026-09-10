@@ -38,12 +38,35 @@ button,input{font:inherit}.app{width:min(100%,560px);margin:0 auto;padding:calc(
 .sheet{position:fixed;z-index:80;inset:0;background:rgba(0,0,0,.58);display:none;align-items:flex-end}.sheet.show{display:flex}.sheet-body{width:min(560px,100%);margin:0 auto;max-height:90vh;overflow:auto;background:#0c1727;border-radius:29px 29px 0 0;border-top:1px solid var(--line);padding:10px 17px calc(22px + var(--safeBottom));box-shadow:0 -20px 50px rgba(0,0,0,.35)}.drag{width:43px;height:5px;border-radius:10px;background:#34445c;margin:2px auto 17px}.sheet-head{display:flex;justify-content:space-between;gap:10px}.sheet h3{font-size:22px;letter-spacing:-.025em;margin:2px 0 4px}.sheet-no{color:var(--gold2);font-size:11px;font-weight:850;margin-bottom:2px}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}.info-box{min-width:0;background:var(--surface2);border:1px solid rgba(255,255,255,.045);border-radius:15px;padding:12px}.info-box.full{grid-column:1/-1}.info-box small{display:block;color:var(--muted);font-size:10px;margin-bottom:5px}.info-box b{font-size:13px;line-height:1.35;word-break:break-word}.sheet-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}.act{border:0;border-radius:14px;padding:13px;font-weight:820}.act.primary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#171108}.act.secondary{background:var(--surface2);border:1px solid var(--line);color:var(--text)}.status-title{font-size:13px;font-weight:820;margin:12px 1px 9px}.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.status-grid button{border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:13px;padding:11px 8px;font-size:12px;font-weight:730}.notice{padding:11px 13px;border:1px solid rgba(243,184,63,.22);background:rgba(243,184,63,.09);border-radius:14px;color:#ffe09d;font-size:11px;margin-bottom:12px}.hidden{display:none!important}.pulse{animation:pulse .25s ease-out}@keyframes pulse{from{transform:scale(.985);opacity:.75}to{transform:scale(1);opacity:1}}
 @media(max-width:390px){.metrics{grid-template-columns:repeat(2,1fr)}.metric{text-align:left;padding:13px}.metric span{font-size:11px}.info-grid{grid-template-columns:1fr}}
 @media(display-mode:standalone){.app{padding-top:calc(10px + var(--safeTop))}}
+
+.login-screen{position:fixed;z-index:200;inset:0;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 80% 10%,rgba(243,184,63,.16),transparent 32%),linear-gradient(180deg,#07101c,#091523 55%,#07101c)}
+.login-card{width:min(100%,420px);background:linear-gradient(145deg,rgba(18,33,55,.98),rgba(10,20,34,.98));border:1px solid rgba(243,184,63,.18);border-radius:30px;padding:26px;box-shadow:0 26px 70px rgba(0,0,0,.34)}
+.login-logo{width:70px;height:70px;border-radius:22px;display:grid;place-items:center;margin:0 auto 18px;background:linear-gradient(145deg,#182943,#0a1422);border:1px solid rgba(243,184,63,.28);font-size:34px;box-shadow:inset 0 0 24px rgba(243,184,63,.08)}
+.login-card h1{margin:0;text-align:center;font-size:30px;letter-spacing:-.035em}
+.login-card p{margin:8px 0 22px;text-align:center;color:var(--muted);font-size:13px;line-height:1.5}
+.pin-input{width:100%;padding:16px 17px;border-radius:16px;background:#091423;border:1px solid var(--line);color:var(--text);outline:none;text-align:center;font-size:22px;font-weight:850;letter-spacing:.35em}
+.pin-input:focus{border-color:rgba(243,184,63,.5);box-shadow:0 0 0 3px rgba(243,184,63,.08)}
+.login-btn{width:100%;margin-top:12px;border:0;border-radius:16px;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#171108;font-weight:900;font-size:15px}
+.login-error{min-height:18px;margin-top:10px;text-align:center;color:#ff9da4;font-size:12px}
+.app.locked{visibility:hidden}
+
 </style>
 </head>
 <body>
-<div class="app">
+
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">☀️</div>
+    <h1>SolarFlow</h1>
+    <p>Вход в CRM владельца</p>
+    <input id="pinInput" class="pin-input" type="password" inputmode="numeric" maxlength="12" autocomplete="one-time-code" placeholder="••••••"/>
+    <button id="loginBtn" class="login-btn" onclick="loginOwner()">Войти</button>
+    <div id="loginError" class="login-error"></div>
+  </div>
+</div>
+
+<div class="app locked">
  <header class="topbar"><div class="brand"><div class="logo"><span>☀️</span></div><div><div class="brand-title">SolarFlow</div><div class="brand-sub">Солнечная энергетика под ключ</div></div></div><div class="profile" id="avatar">A</div></header>
- <div id="demoNotice" class="notice hidden">Демо-режим. Для реальных данных откройте SolarFlow из Telegram-бота.</div>
 
  <main id="homeView">
    <section class="hero"><div class="eyebrow" id="dayLabel">Сегодня</div><h1 id="hello">Добрый вечер 👋</h1><p>Заявки, замеры и монтажи собраны в одном месте.</p><div class="hero-actions"><button class="pillbtn gold" onclick="setView('leads')">📋 Открыть заявки</button><button class="pillbtn dark" onclick="loadData()">↻ Обновить</button></div></section>
@@ -66,6 +89,7 @@ button,input{font:inherit}.app{width:min(100%,560px);margin:0 auto;padding:calc(
    <div class="more-card"><div class="more-icon">📸</div><div class="txt"><b>Объекты</b><span>Фото крыш, щитов и монтажей</span></div><span class="arrow">›</span></div>
    <div class="more-card"><div class="more-icon">👥</div><div class="txt"><b>Клиенты</b><span>История обращений и контакты</span></div><span class="arrow">›</span></div>
    <div class="more-card"><div class="more-icon">⚙️</div><div class="txt"><b>Настройки</b><span>Администраторы и параметры CRM</span></div><span class="arrow">›</span></div>
+<div class="more-card" onclick="logoutOwner()"><div class="more-icon">🔒</div><div class="txt"><b>Выйти из CRM</b><span>Потребуется снова ввести PIN-код</span></div><div class="arrow">›</div></div>
  </div></main>
 </div>
 
@@ -73,13 +97,40 @@ button,input{font:inherit}.app{width:min(100%,560px);margin:0 auto;padding:calc(
 <div id="sheet" class="sheet" onclick="if(event.target===this)closeSheet()"><div class="sheet-body"><div class="drag"></div><div id="sheetContent"></div></div></div>
 <script>
 const API_URL="https://mchfkcmjycrtznlaxlvm.supabase.co/functions/v1/telegram-bot?miniapp=1";
-const tg=window.Telegram?.WebApp; let data={leads:[],stats:{},admin:{name:"Администратор"}},selectedLead=null,currentFilter="all";
+const tg=window.Telegram?.WebApp;
+let data={leads:[],stats:{},admin:{name:"Администратор"}},selectedLead=null,currentFilter="all";
+let ownerSession=localStorage.getItem("solarflow_owner_session")||"";
 if(tg){tg.ready();tg.expand();try{tg.setHeaderColor("#07101c");tg.setBackgroundColor("#07101c")}catch(e){}}
-const demo=[
- {id:"demo1",request_number:41,status:"new",status_label:"Новая",object_type:"Частный дом",system_type:"Станция под ключ",desired_power_kw:20,address:"ул. Центральная, 15",created_at:new Date().toISOString(),client:{full_name:"Артем",phone:"+380 67 123 45 67",city:"Самар"}},
- {id:"demo2",request_number:40,status:"measurement",status_label:"Замер",object_type:"Частный дом",system_type:"Инвертор + аккумулятор",desired_power_kw:12,address:"ул. Садовая, 8",visit_date:new Date(Date.now()+3600000).toISOString(),created_at:new Date().toISOString(),client:{full_name:"Сергей",phone:"+380 93 555 22 11",city:"Днепр"}},
- {id:"demo3",request_number:39,status:"installation",status_label:"Монтаж",object_type:"Бизнес",system_type:"Солнечные панели",desired_power_kw:20,address:"Промышленная, 4",installation_date:new Date(Date.now()+86400000).toISOString(),created_at:new Date().toISOString(),client:{full_name:"Ирина",phone:"+380 50 777 33 44",city:"Каменское"}}
-];
+
+function showLogin(message=""){
+  document.getElementById("loginScreen").classList.remove("hidden");
+  document.querySelector(".app").classList.add("locked");
+  document.getElementById("loginError").textContent=message;
+  setTimeout(()=>document.getElementById("pinInput")?.focus(),100);
+}
+function showApp(){
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.querySelector(".app").classList.remove("locked");
+}
+async function loginOwner(){
+  const pin=(document.getElementById("pinInput").value||"").trim();
+  const err=document.getElementById("loginError"),btn=document.getElementById("loginBtn");
+  if(!pin){err.textContent="Введите PIN-код";return}
+  btn.disabled=true;btn.textContent="Входим…";err.textContent="";
+  try{
+    const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"login",pin})});
+    const j=await r.json();
+    if(!r.ok||!j.ok||!j.session)throw new Error(j.error||"Ошибка входа");
+    ownerSession=j.session;localStorage.setItem("solarflow_owner_session",ownerSession);
+    document.getElementById("pinInput").value="";
+    showApp();await loadData();
+  }catch(e){err.textContent=e.message||"Неверный PIN-код"}
+  finally{btn.disabled=false;btn.textContent="Войти"}
+}
+function logoutOwner(){
+  ownerSession="";localStorage.removeItem("solarflow_owner_session");data={leads:[],stats:{},admin:{name:"Администратор"}};showLogin("Вы вышли из CRM");
+}
+document.getElementById("pinInput")?.addEventListener("keydown",e=>{if(e.key==="Enter")loginOwner()});
 function esc(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
 function requestNo(l,index){const n=l.request_number??l.lead_number??null;return n?`№${String(n).padStart(4,"0")}`:`№${String(Math.max(1,(data.leads||[]).length-index)).padStart(4,"0")}`}
 function fmtDate(v,withTime=true){if(!v)return"—";const opt=withTime?{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}:{day:"2-digit",month:"long"};return new Intl.DateTimeFormat("ru-UA",opt).format(new Date(v))}
@@ -88,7 +139,16 @@ function badgeClass(s){return ["new","paid","completed","rejected"].includes(s)?
 function leadNumber(l){const i=(data.leads||[]).findIndex(x=>x.id===l.id);return requestNo(l,i)}
 function cardHtml(l){const when=l.visit_date?`📐 ${fmtDate(l.visit_date)}`:l.installation_date?`🔧 ${fmtDate(l.installation_date)}`:fmtDate(l.created_at);return `<div class="lead" onclick="openLead('${l.id}')"><div class="lead-top"><div><div class="lead-no">ЗАЯВКА ${leadNumber(l)}</div><div class="client">${esc(l.client?.full_name||"Без имени")}</div><div class="meta">${esc(l.client?.city||"—")} · ${esc(l.system_type||l.object_type||"Объект")}</div></div><span class="badge ${badgeClass(l.status)}">${esc(l.status_label||l.status||"—")}</span></div><div class="lead-info"><span class="power">${l.desired_power_kw?esc(l.desired_power_kw)+" кВт":"Мощность —"}</span><span class="spacer"></span><span class="date">${esc(when)}</span></div></div>`}
 function greeting(){const h=new Date().getHours();return h<6?"Доброй ночи":h<12?"Доброе утро":h<18?"Добрый день":"Добрый вечер"}
-async function loadData(){if(!tg?.initData){document.getElementById("demoNotice").classList.remove("hidden");data={admin:{name:"Арсен"},leads:demo,stats:{new:1,measurement:1,installation:1,paid:0}};render();return}try{const r=await fetch(API_URL,{headers:{"X-Telegram-Init-Data":tg.initData}});const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||"Ошибка API");data=j;render()}catch(e){alert("Не удалось загрузить CRM: "+e.message)}}
+async function loadData(){
+  if(!ownerSession){showLogin();return}
+  try{
+    const r=await fetch(API_URL,{headers:{"X-SolarFlow-Session":ownerSession}});
+    const j=await r.json();
+    if(r.status===401){logoutOwner();document.getElementById("loginError").textContent="Сессия истекла. Введите PIN ещё раз.";return}
+    if(!r.ok||!j.ok)throw new Error(j.error||"Ошибка API");
+    data=j;showApp();render();
+  }catch(e){alert("Не удалось загрузить CRM: "+e.message)}
+}
 function render(){const first=(data.admin?.name||"Администратор").trim().split(" ")[0];document.getElementById("hello").textContent=`${greeting()}, ${first} 👋`;document.getElementById("avatar").textContent=first[0]?.toUpperCase()||"A";document.getElementById("dayLabel").textContent=new Intl.DateTimeFormat("ru-UA",{weekday:"long",day:"numeric",month:"long"}).format(new Date());document.getElementById("sNew").textContent=data.stats?.new||0;document.getElementById("sMeasure").textContent=data.stats?.measurement||0;document.getElementById("sInstall").textContent=data.stats?.installation||0;document.getElementById("sPaid").textContent=data.stats?.paid||0;document.getElementById("recentCards").innerHTML=(data.leads||[]).slice(0,4).map(cardHtml).join("")||'<div class="empty"><b>Пока тихо</b>Новых заявок ещё нет.</div>';renderToday();renderAllLeads();renderCalendar()}
 function renderToday(){const today=(data.leads||[]).filter(l=>sameDay(l.visit_date)||sameDay(l.installation_date));document.getElementById("todayTasks").innerHTML=today.map(l=>{const isM=sameDay(l.visit_date),time=fmtDate(isM?l.visit_date:l.installation_date).split(", ").pop();return `<div class="task" onclick="openLead('${l.id}')"><div class="task-icon">${isM?"📐":"🔧"}</div><div class="task-main"><b>${isM?"Замер":"Монтаж"} · ${esc(l.client?.full_name||"Клиент")}</b><span>${esc(l.client?.city||"—")} · ${esc(l.address||"")}</span></div><div class="task-time">${esc(time)}</div></div>`}).join("")||'<div class="empty"><b>Сегодня свободно</b>Назначенных замеров и монтажей нет.</div>'}
 function setFilter(v,el){currentFilter=v;document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("active",c===el));renderAllLeads();tg?.HapticFeedback?.selectionChanged()}
@@ -97,8 +157,17 @@ function renderCalendar(){const arr=(data.leads||[]).filter(l=>l.visit_date||l.i
 function setView(v){["home","leads","calendar","more"].forEach(x=>document.getElementById(x+"View").classList.toggle("hidden",x!==v));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===v));document.querySelector(".app").classList.remove("pulse");void document.querySelector(".app").offsetWidth;document.querySelector(".app").classList.add("pulse");window.scrollTo({top:0,behavior:"smooth"});tg?.HapticFeedback?.selectionChanged()}
 function openLead(id){const l=(data.leads||[]).find(x=>x.id===id);if(!l)return;selectedLead=l;const phone=(l.client?.phone||"").replace(/[^\d+]/g,"");const map=l.latitude&&l.longitude?`https://maps.google.com/?q=${l.latitude},${l.longitude}`:l.address?`https://maps.google.com/?q=${encodeURIComponent((l.client?.city||"")+" "+l.address)}`:"";document.getElementById("sheetContent").innerHTML=`<div class="sheet-head"><div><div class="sheet-no">ЗАЯВКА ${leadNumber(l)}</div><h3>${esc(l.client?.full_name||"Клиент")}</h3><div class="meta">${esc(l.client?.city||"—")}</div></div><span class="badge ${badgeClass(l.status)}">${esc(l.status_label||l.status||"—")}</span></div><div class="info-grid"><div class="info-box"><small>Телефон</small><b>${esc(l.client?.phone||"—")}</b></div><div class="info-box"><small>Мощность</small><b>${l.desired_power_kw?esc(l.desired_power_kw)+" кВт":"Не указана"}</b></div><div class="info-box full"><small>Система</small><b>${esc(l.system_type||l.object_type||"—")}</b></div><div class="info-box full"><small>Адрес</small><b>${esc(l.address||"—")}</b></div>${l.visit_date?`<div class="info-box"><small>Замер</small><b>${fmtDate(l.visit_date)}</b></div>`:""}${l.installation_date?`<div class="info-box"><small>Монтаж</small><b>${fmtDate(l.installation_date)}</b></div>`:""}${l.comment?`<div class="info-box full"><small>Комментарий</small><b>${esc(l.comment)}</b></div>`:""}</div><div class="sheet-actions"><button class="act primary" onclick="location.href='tel:${phone}'">📞 Позвонить</button>${map?`<button class="act secondary" onclick="window.open('${map}','_blank')">📍 Карта</button>`:`<button class="act secondary" onclick="closeSheet()">Закрыть</button>`}</div><div class="status-title">Изменить статус</div><div class="status-grid"><button onclick="updateStatus('contacted')">📞 Связались</button><button onclick="updateStatus('measurement')">📐 Замер</button><button onclick="updateStatus('estimate_ready')">💰 Смета</button><button onclick="updateStatus('installation')">🔧 Монтаж</button><button onclick="updateStatus('completed')">✅ Завершено</button><button onclick="updateStatus('paid')">💵 Оплачено</button></div>`;document.getElementById("sheet").classList.add("show");tg?.HapticFeedback?.impactOccurred("light")}
 function closeSheet(){document.getElementById("sheet").classList.remove("show")}
-async function updateStatus(status){if(!selectedLead)return;if(!tg?.initData){selectedLead.status=status;selectedLead.status_label=status;closeSheet();render();return}try{const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","X-Telegram-Init-Data":tg.initData},body:JSON.stringify({action:"update_status",lead_id:selectedLead.id,status})});const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||"Ошибка");tg?.HapticFeedback?.notificationOccurred("success");closeSheet();await loadData()}catch(e){alert("Не удалось изменить статус: "+e.message)}}
-loadData();
+async function updateStatus(status){
+  if(!selectedLead||!ownerSession)return;
+  try{
+    const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","X-SolarFlow-Session":ownerSession},body:JSON.stringify({action:"update_status",lead_id:selectedLead.id,status})});
+    const j=await r.json();
+    if(r.status===401){logoutOwner();return}
+    if(!r.ok||!j.ok)throw new Error(j.error||"Ошибка");
+    tg?.HapticFeedback?.notificationOccurred("success");closeSheet();await loadData()
+  }catch(e){alert("Не удалось изменить статус: "+e.message)}
+}
+if(ownerSession){loadData()}else{showLogin()}
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
 </script>
 </body></html>
